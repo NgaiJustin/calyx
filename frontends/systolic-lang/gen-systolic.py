@@ -57,7 +57,7 @@ def pe(prog: cb.Builder):
     acc = comp.reg("acc", BITWIDTH)
     add = comp.add("add", BITWIDTH)
     # XXX: pipelined mult assumes 32 bit multiplication
-    mul = comp.pipelined_mult("mul")
+    mul = comp.bb_pipelined_mult("mul")
 
     this = comp.this()
     with comp.static_group("do_add", 1):

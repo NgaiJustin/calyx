@@ -10,20 +10,11 @@ extern "pipelined.sv" {
     );
 
     // A latency-sensitive multiplier that takes 4 cycles to compute its result.
-    // static<4> primitive bb_pipelined_mult (
-    //     @clk clk: 1,
-    //     left: 32,
-    //     right: 32
-    // ) -> (
-    //     out: 32
-    // );
-
-    // A latency-sensitive multiplier that takes 4 cycles to compute its result.
-    static<3> primitive bb_mult (
+    static<4> primitive bb_pipelined_mult (
         @clk clk: 1,
-        I0: 8,
-        I1: 8
+        left: 32,
+        right: 32
     ) -> (
-        O: 16
+        out: 32
     );
 }

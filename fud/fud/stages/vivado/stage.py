@@ -107,7 +107,6 @@ class VivadoStage(VivadoBaseStage):
     name = "synth-verilog"
 
     def __init__(self):
-        print("HELLO")
         super().__init__(
             "synth-verilog",
             "synth-files",
@@ -118,7 +117,6 @@ class VivadoStage(VivadoBaseStage):
         )
 
     def device_files(self, config):
-        print("I'M HERE")
         root = Path(config["global", cfg.ROOT])
         # Load constraints
         constraints = config.get(["stages", self.name, "constraints"])
@@ -132,7 +130,6 @@ class VivadoStage(VivadoBaseStage):
             tcl = Path(synth)
         else:
             tcl = root / "fud" / "synth" / "synth.tcl"
-        print(tcl)
         return [tcl, constraints]
 
 

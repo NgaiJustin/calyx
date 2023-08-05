@@ -631,3 +631,7 @@ class Stdlib:
     @staticmethod
     def pipelined_mult():
         return CompInst(f"pipelined_mult", [])
+
+    @staticmethod
+    def bb_pipelined_mult():
+        return CompInst(f"bb_pipelined_mult", [])

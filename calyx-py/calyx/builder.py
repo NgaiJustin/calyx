@@ -320,6 +320,11 @@ class ComponentBuilder:
         self.prog.import_("primitives/pipelined.futil")
         return self.cell(name, ast.Stdlib.pipelined_mult())
 
+    def bb_pipelined_mult(self, name: str) -> CellBuilder:
+        """Generate a Xillinx black box IP pipelined multiplier for synthesis."""
+        self.prog.import_("primitives/pipelined.futil")
+        return self.cell(name, ast.Stdlib.bb_pipelined_mult())
+
 
 def as_control(obj):
     """Convert a Python object into a control statement.

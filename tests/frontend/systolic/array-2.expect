@@ -5,7 +5,7 @@ static<1> component mac_pe(top: 32, left: 32, mul_ready: 1) -> (out: 32) {
   cells {
     acc = std_reg(32);
     add = std_add(32);
-    mul = pipelined_mult();
+    mul = bb_pipelined_mult();
   }
   wires {
     static<1> group do_add {

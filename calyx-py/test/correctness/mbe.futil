@@ -1,0 +1,50 @@
+import "primitives/core.futil";
+import "primitives/binary_operators.futil";
+component main() -> () {
+  cells {
+    incr = incr();
+    value = std_reg(32);
+  }
+  wires {
+
+  }
+  control {
+    seq {
+      invoke incr[value=value]()();
+    }
+  }
+}
+component incr() -> () {
+  cells {
+    ref value = std_reg(32);
+    incr_helper = incr_helper();
+  }
+  wires {
+
+  }
+  control {
+    seq {
+      invoke incr_helper[value=value]()();
+    }
+  }
+}
+component incr_helper() -> () {
+  cells {
+    ref value = std_reg(32);
+    incr_value = std_add(32);
+  }
+  wires {
+    group incr_value_group {
+      incr_value.left = value.out;
+      incr_value.right = 32'd1;
+      value.write_en = 1'd1;
+      value.in = incr_value.out;
+      incr_value_group[done] = value.done;
+    }
+  }
+  control {
+    seq {
+      incr_value_group;
+    }
+  }
+}

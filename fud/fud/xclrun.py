@@ -42,13 +42,19 @@ from fud.errors import InvalidNumericType
 def mem_to_buf(mem):
     """Convert a fud-style JSON memory object to a PYNQ buffer."""
     ndarray = np.array(mem["data"], dtype=_dtype(mem["format"]))
+    if(mem["format"]["numeric_type"] == "fixed_point"):
+        ndarray = float_to_fixed(ndarray, mem["format"]["frac_width"])
+    print(f"ndarray: {ndarray}")
     buffer = pynq.allocate(ndarray.shape, dtype=ndarray.dtype)
     buffer[:] = ndarray[:]
+    
+    print("buffer: {buffer}")
     return buffer
 
 
 def buf_to_mem(fmt, buf):
     """Convert a PYNQ buffer to a fud-style JSON memory value."""
+    print(f"Buffer is {buf}")
     # converts int representation into fixed point
     if fmt["numeric_type"] == "fixed_point":
         width, int_width = parse_fp_widths(fmt)
@@ -57,7 +63,7 @@ def buf_to_mem(fmt, buf):
         def convert_to_fp(value: float):
             float_to_fixed(float(value), frac_width)
 
-        convert_to_fp(buf)
+        buf = map(convert_to_fp, buf)
         return list(buf)
     elif fmt["numeric_type"] == "bitnum":
         return list([int(e) for e in buf])
@@ -131,6 +137,7 @@ def xclrun():
     # Load the input JSON data file.
     with open(args.data) as f:
         in_data = sjson.load(f, use_decimal=True)
+    print(f"Indata is {in_data}")
 
     # Run the program.
     out_data = run(Path(args.bin), in_data)

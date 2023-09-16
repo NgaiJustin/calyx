@@ -36,19 +36,43 @@ import sys
 from typing import Mapping, Any, Dict
 from pathlib import Path
 from fud.stages.verilator.json_to_dat import parse_fp_widths, float_to_fixed
+from fud.stages.verilator.numeric_types import FixedPoint
 from fud.errors import InvalidNumericType
+from decimal import Decimal
 
 
+# Returns unsigned int that is close to dec (rounded) if viewed as a fixed point
+def decimal_to_fixed(dec: Decimal, width: int, int_width: int, is_signed: bool) -> int:
+
+    frac_width = width - int_width
+    two_to_the_n = 1 << frac_width
+    rounded_dec = round(dec * two_to_the_n) / two_to_the_n
+    fxp = FixedPoint(str(rounded_dec), width, frac_width, is_signed)
+    uint = fxp.unsigned_integer()
+    return uint
+
+
+# TODO(nathanielnrn): How do we want to handle return types? probably convert to float?
+
+# Note: mem passed in from `run` has type Decimal
 def mem_to_buf(mem):
     """Convert a fud-style JSON memory object to a PYNQ buffer."""
-    ndarray = np.array(mem["data"], dtype=_dtype(mem["format"]))
-    if(mem["format"]["numeric_type"] == "fixed_point"):
-        ndarray = float_to_fixed(ndarray, mem["format"]["frac_width"])
-    print(f"ndarray: {ndarray}")
-    buffer = pynq.allocate(ndarray.shape, dtype=ndarray.dtype)
-    buffer[:] = ndarray[:]
-    
-    print("buffer: {buffer}")
+    print(f"mem: {mem}")
+    values = np.array(mem["data"])
+    print(f"values_orig: {values}")
+    width = mem["format"]["width"]
+    is_signed = mem["format"]["is_signed"]
+    if mem["format"]["numeric_type"] == "fixed_point":
+        frac_width = mem["format"]["frac_width"]
+        int_width = width - frac_width
+        values = np.array(
+            [decimal_to_fixed(value, width, int_width, is_signed) for value in values],
+            _dtype(mem["format"]),
+        )
+    print(f"values after transform: {values}")
+    buffer = pynq.allocate(values.shape, dtype=values.dtype)
+    buffer[:] = values[:]
+
     return buffer
 
 
@@ -60,6 +84,7 @@ def buf_to_mem(fmt, buf):
         width, int_width = parse_fp_widths(fmt)
         frac_width = width - int_width
 
+        #TODO(nathanielnrn): is this right? not sure we want this
         def convert_to_fp(value: float):
             float_to_fixed(float(value), frac_width)
 
@@ -102,8 +127,9 @@ def run(xclbin: Path, data: Mapping[str, Any]) -> Dict[str, Any]:
     # Collect the output data.
     for buf in buffers:
         buf.sync_from_device()
-    mems = {name: buf_to_mem(data[name]["format"], buf)
-            for name, buf in zip(data, buffers)}
+    mems = {
+        name: buf_to_mem(data[name]["format"], buf) for name, buf in zip(data, buffers)
+    }
 
     # PYNQ recommends explicitly freeing its resources.
     del buffers
@@ -124,14 +150,16 @@ def _dtype(fmt) -> np.dtype:
 def xclrun():
     # Parse command-line arguments.
     parser = argparse.ArgumentParser(
-        description='run a compiled XRT program',
+        description="run a compiled XRT program",
     )
-    parser.add_argument('bin', metavar='XCLBIN',
-                        help='the .xclbin binary file to run')
-    parser.add_argument('data', metavar='DATA',
-                        help='the JSON input data file')
-    parser.add_argument('--out', '-o', metavar='FILE',
-                        help='write JSON results to a file instead of stdout')
+    parser.add_argument("bin", metavar="XCLBIN", help="the .xclbin binary file to run")
+    parser.add_argument("data", metavar="DATA", help="the JSON input data file")
+    parser.add_argument(
+        "--out",
+        "-o",
+        metavar="FILE",
+        help="write JSON results to a file instead of stdout",
+    )
     args = parser.parse_args()
 
     # Load the input JSON data file.
@@ -143,7 +171,7 @@ def xclrun():
     out_data = run(Path(args.bin), in_data)
 
     # Dump the output JSON data.
-    outfile = open(args.out, 'w') if args.out else sys.stdout
+    outfile = open(args.out, "w") if args.out else sys.stdout
     sjson.dump(out_data, outfile, indent=2, use_decimal=True)
 
 

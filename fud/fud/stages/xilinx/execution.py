@@ -111,9 +111,11 @@ class HwExecutionStage(Stage):
             )
             envs = {
                 "EMCONFIG_PATH": new_dir.name,
-                "XCL_EMULATION_MODE": emu_mode,  # hw_emu or hw
                 "XRT_INI_PATH": xrt_ini_path,
             }
+            #PYNQ expects XCL_EMULATION_MODE to not be set for hw target
+            if emu_mode != "hw":
+                envs["XCL_EMULATION_MODE"] = emu_mode # hw_emu or sw_emu, for hw should be blank
 
             # Invoke xclrun.
             start_time = time.time()
